@@ -20,16 +20,17 @@ class SolutionNode:
         self.size_of_board = len(self.board)
         self.goal_board = [] if goal_board is None else goal_board
         self.current_depth_in_tree = current_depth_in_tree
+        self.should_calculate_heuristics = should_calculate_heuristics
+        self.heap_snapshot = ""
 
-        if should_calculate_heuristics:
+        if self.should_calculate_heuristics:
             # Final cost of the solution is equal to f = h + g where h is the heuristic and g is the depth in the tree
             self.heuristic = self.calculate_current_heuristic()
             self.cost_of_solution = self.heuristic + self.current_depth_in_tree
-            self.heap_snapshot = ""
+
         else:
             self.heuristic = None
             self.cost_of_solution = 1
-            self.heap_snapshot = ""
 
         # In order for Python's heapq module to work on custom objects, we need to override __lt__
         #  and in order to break a tie, we'll keep a timestamp to keep track of what object was created first
@@ -73,7 +74,8 @@ class SolutionNode:
                                     current_depth_in_tree=self.current_depth_in_tree + 1,
                                     parent=self,
                                     action_taken="UP",
-                                    goal_board=self.goal_board)
+                                    goal_board=self.goal_board,
+                                    should_calculate_heuristics=self.should_calculate_heuristics)
             legal_moves.append(new_node)
 
         # DOWN
@@ -88,7 +90,8 @@ class SolutionNode:
                                     current_depth_in_tree=self.current_depth_in_tree + 1,
                                     parent=self,
                                     action_taken="DOWN",
-                                    goal_board=self.goal_board)
+                                    goal_board=self.goal_board,
+                                    should_calculate_heuristics=self.should_calculate_heuristics)
             legal_moves.append(new_node)
 
         # RIGHT
@@ -103,7 +106,8 @@ class SolutionNode:
                                     current_depth_in_tree=self.current_depth_in_tree + 1,
                                     parent=self,
                                     action_taken="RIGHT",
-                                    goal_board=self.goal_board)
+                                    goal_board=self.goal_board,
+                                    should_calculate_heuristics=self.should_calculate_heuristics)
             legal_moves.append(new_node)
 
         # LEFT
@@ -118,7 +122,8 @@ class SolutionNode:
                                     current_depth_in_tree=self.current_depth_in_tree + 1,
                                     parent=self,
                                     action_taken="LEFT",
-                                    goal_board=self.goal_board)
+                                    goal_board=self.goal_board,
+                                    should_calculate_heuristics=self.should_calculate_heuristics)
             legal_moves.append(new_node)
 
         self._possible_movements = legal_moves
@@ -194,14 +199,29 @@ class SolutionNode:
         return positions
 
 
-def solve_8_puzzle(puzzle: str, desired_goal: str = "0 1 2 3 4 5 6 7 8") -> dict:
-    print("Solving!...")
+def solve_8_puzzle(puzzle: str, algorithm_id: int, desired_goal: str = "0 1 2 3 4 5 6 7 8") -> dict:
 
-    root = SolutionNode(SolutionNode.fingerprint_2_board(puzzle),
-                        goal_board=SolutionNode.fingerprint_2_board(desired_goal))
+    if algorithm_id == 1:
+        print("Solving using BFS!...")
+        search_algorithm = breadth_first_search
+        root = SolutionNode(SolutionNode.fingerprint_2_board(puzzle),
+                            goal_board=SolutionNode.fingerprint_2_board(desired_goal),
+                            should_calculate_heuristics=False)
+    elif algorithm_id == 2:
+        print("Solving using DFS!...")
+        search_algorithm = breadth_first_search
+        root = SolutionNode(SolutionNode.fingerprint_2_board(puzzle),
+                            goal_board=SolutionNode.fingerprint_2_board(desired_goal),
+                            should_calculate_heuristics=False)
+    else:
+        print("Solving using A*!...")
+        search_algorithm = a_star_search
+        root = SolutionNode(SolutionNode.fingerprint_2_board(puzzle),
+                            goal_board=SolutionNode.fingerprint_2_board(desired_goal),
+                            should_calculate_heuristics=True)
 
     start_time = datetime.now()
-    solution = breadth_first_search(root, desired_goal)
+    solution = search_algorithm(root, desired_goal)
     finish_time = datetime.now() - start_time
     solution["finish_time"] = finish_time
 
@@ -355,7 +375,7 @@ def print_solution_info(solution_info: dict, puzzle: str, desired_goal: str):
             # Print a nice formatted board from the matrix representing it
             print("\n".join(["".join(["{:4}".format(item) for item in row]) for row in s.board]))
 
-            if s.heuristic:  # This means that we used A Star
+            if s.heuristic is not None:  # This means that we used A Star
                 # Print the values for H(x), G(x) and F(x) for the node
                 print(f"H(x)={s.heuristic}, G(x)={s.current_depth_in_tree}, F(x)={s.cost_of_solution}")
 
@@ -377,6 +397,11 @@ if __name__ == '__main__':
         start_board = "7 2 4 5 0 6 8 3 1"
         goal = "0 1 2 3 4 5 6 7 8"
 
-    puzzle_solution = solve_8_puzzle(start_board, goal)
+    selected_algorithm = menu_selection(["Breadth-First Search",
+                                         "Depth-First Search",
+                                         "A*"],
+                                        "Please select a search algorithm to use:")
+
+    puzzle_solution = solve_8_puzzle(start_board, selected_algorithm, goal)
 
     print_solution_info(puzzle_solution, start_board, goal)
