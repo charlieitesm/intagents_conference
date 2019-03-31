@@ -13,17 +13,23 @@ class SolutionNode:
                  current_depth_in_tree=0,
                  parent=None,
                  action_taken: str = None,
-                 goal_board: list = None):
+                 goal_board: list = None,
+                 should_calculate_heuristics: bool = False):
         self.board = board
         self.fingerprint = SolutionNode.board_2_fingerprint(board)
         self.size_of_board = len(self.board)
         self.goal_board = [] if goal_board is None else goal_board
-
-        # The final cost of the solution is equal to f = h + g where h is te heuristic and g is the depth in the tree
-        self.heuristic = self.calculate_current_heuristic()
         self.current_depth_in_tree = current_depth_in_tree
-        self.cost_of_solution = self.heuristic + self.current_depth_in_tree
-        self.heap_snapshot = ""
+
+        if should_calculate_heuristics:
+            # Final cost of the solution is equal to f = h + g where h is the heuristic and g is the depth in the tree
+            self.heuristic = self.calculate_current_heuristic()
+            self.cost_of_solution = self.heuristic + self.current_depth_in_tree
+            self.heap_snapshot = ""
+        else:
+            self.heuristic = None
+            self.cost_of_solution = 1
+            self.heap_snapshot = ""
 
         # In order for Python's heapq module to work on custom objects, we need to override __lt__
         #  and in order to break a tie, we'll keep a timestamp to keep track of what object was created first
@@ -188,7 +194,7 @@ class SolutionNode:
         return positions
 
 
-def solve_8_puzzle(puzzle: str, desired_goal: str = "0 1 2 3 4 5 6 7 8"):
+def solve_8_puzzle(puzzle: str, desired_goal: str = "0 1 2 3 4 5 6 7 8") -> dict:
     print("Solving!...")
 
     root = SolutionNode(SolutionNode.fingerprint_2_board(puzzle),
@@ -197,15 +203,9 @@ def solve_8_puzzle(puzzle: str, desired_goal: str = "0 1 2 3 4 5 6 7 8"):
     start_time = datetime.now()
     solution = breadth_first_search(root, desired_goal)
     finish_time = datetime.now() - start_time
+    solution["finish_time"] = finish_time
 
-    print(f"Execution time: {finish_time}")
-
-    if not solution["success"]:
-        print(f"No viable solution was found for {puzzle} and a desired_goal {desired_goal}")
-        print(f"Visited nodes: {len(solution['visited'])}")
-        print(f"Memory used in bytes: {solution['memory_used']}")
-
-    else:
+    if solution["success"]:
         # We need to follow the tree from the solution leaf up to the root in order to show the path taken
         steps = []
         traversing_node = solution["end_node"]
@@ -217,22 +217,9 @@ def solve_8_puzzle(puzzle: str, desired_goal: str = "0 1 2 3 4 5 6 7 8"):
         # Since we started at the solution leaf, we need to reverse the list of steps in order to get
         #  a chronological description of the required steps to reach the solution
         steps.reverse()
+        solution["steps"] = steps
 
-        print(f"Visited nodes: {len(solution['visited'])}")
-        print(f"Depth level reached: {len(steps)}")
-        print(f"Memory used in bytes: {solution['memory_used']}")
-
-        for idx, s in enumerate(steps):
-            print(f"{idx}. Move: {s.action_taken}" if s.action_taken else "")
-
-            # Print a nice formatted board from the matrix representing it
-            print("\n".join(["".join(["{:4}".format(item) for item in row]) for row in s.board]))
-
-            # Print the values for H(x), G(x) and F(x) for the node
-            print(f"H(x)={s.heuristic}, G(x)={s.current_depth_in_tree}, F(x)={s.cost_of_solution}")
-
-            # Print how the Heap looked when the node was processed
-            print(f"HEAP>> {s.heap_snapshot}\n")
+    return solution
 
 
 def a_star_search(root: SolutionNode, desired_goal: str) -> dict:
@@ -348,10 +335,38 @@ def ask_for_a_number(message: str = "Please enter an int number: ") -> int:
             print(f"That's not a valid number, please try again...")
 
 
+def print_solution_info(solution_info: dict, puzzle: str, desired_goal: str):
+
+    print(f"Execution time: {solution_info['finish_time']}")
+
+    if not solution_info["success"]:
+        print(f"No viable solution was found for {puzzle} and a desired_goal {desired_goal}")
+        print(f"Visited nodes: {len(solution_info['visited'])}")
+        print(f"Memory used in bytes: {solution_info['memory_used']}")
+
+    else:
+        print(f"Visited nodes: {len(solution_info['visited'])}")
+        print(f"Depth level reached: {len(solution_info['steps'])}")
+        print(f"Memory used in bytes: {solution_info['memory_used']}")
+
+        for idx, s in enumerate(solution_info["steps"]):
+            print(f"{idx}. Move: {s.action_taken}" if s.action_taken else "")
+
+            # Print a nice formatted board from the matrix representing it
+            print("\n".join(["".join(["{:4}".format(item) for item in row]) for row in s.board]))
+
+            if s.heuristic:  # This means that we used A Star
+                # Print the values for H(x), G(x) and F(x) for the node
+                print(f"H(x)={s.heuristic}, G(x)={s.current_depth_in_tree}, F(x)={s.cost_of_solution}")
+
+                # Print how the Heap looked when the node was processed
+                print(f"HEAP>> {s.heap_snapshot}\n")
+
+
 if __name__ == '__main__':
     option = menu_selection(["Read from std input.",
                              "Use the assignment case <7 2 4 5 0 6 8 3 1> to <0 1 2 3 4 5 6 7 8>"],
-                            "**** N-Puzzle Solver Using ****\nPlease select an option:")
+                            "**** N-Puzzle Solver ****\nPlease select an option:")
 
     if option == 1:
         start_board = input("Input the starting state of the board separated by spaces: ").strip()
@@ -362,4 +377,6 @@ if __name__ == '__main__':
         start_board = "7 2 4 5 0 6 8 3 1"
         goal = "0 1 2 3 4 5 6 7 8"
 
-    solve_8_puzzle(start_board, goal)
+    puzzle_solution = solve_8_puzzle(start_board, goal)
+
+    print_solution_info(puzzle_solution, start_board, goal)
