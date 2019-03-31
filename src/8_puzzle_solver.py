@@ -209,7 +209,7 @@ def solve_8_puzzle(puzzle: str, algorithm_id: int, desired_goal: str = "0 1 2 3 
                             should_calculate_heuristics=False)
     elif algorithm_id == 2:
         print("Solving using DFS!...")
-        search_algorithm = breadth_first_search
+        search_algorithm = depth_first_search
         root = SolutionNode(SolutionNode.fingerprint_2_board(puzzle),
                             goal_board=SolutionNode.fingerprint_2_board(desired_goal),
                             should_calculate_heuristics=False)
@@ -307,6 +307,41 @@ def breadth_first_search(root: SolutionNode, desired_goal: str) -> dict:
         for possible_movements in current_node.get_possible_movements():
             if possible_movements.fingerprint not in visited and not current_node.has_been_visited:
                 frontier.put(possible_movements)
+
+        visited.add(current_node.fingerprint)
+        current_node.has_been_visited = True
+        memory_used_in_bytes += sys.getsizeof(current_node)
+
+    return {
+        "visited": visited,
+        "memory_used": memory_used_in_bytes,
+        "success": False
+    }
+
+
+def depth_first_search(root: SolutionNode, desired_goal: str) -> dict:
+    node_stack = []
+    visited = set()
+    memory_used_in_bytes = 0
+
+    node_stack.append(root)
+
+    while node_stack:
+
+        current_node = node_stack.pop()
+
+        if current_node.fingerprint == desired_goal:
+            memory_used_in_bytes += sys.getsizeof(current_node)
+            return {
+                "end_node": current_node,
+                "visited": visited,
+                "memory_used": memory_used_in_bytes,
+                "success": True
+            }
+
+        for neighbor in current_node.get_possible_movements():
+            if neighbor.fingerprint not in visited and not current_node.has_been_visited:
+                node_stack.append(neighbor)
 
         visited.add(current_node.fingerprint)
         current_node.has_been_visited = True
