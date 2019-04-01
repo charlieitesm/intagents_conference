@@ -406,17 +406,10 @@ class TicTacToeBrain:
 
 class HumanPlayer:
 
-    PLAYER_NUM = 1
-
     def __init__(self, ui: ConsoleUI, game_token: GameToken):
-        self.name = self.generate_name()
+        self.name = "Human_1"
         self.ui = ui
         self.game_token = game_token
-
-    def generate_name(self) -> str:
-        self_name = f"H_P{HumanPlayer.PLAYER_NUM}"
-        HumanPlayer.PLAYER_NUM += 1
-        return self_name
 
     def make_move(self, board: TicTacToeBoard) -> dict:
         move = self.ui.input(ENTER_YOUR_MOVE_MSG).split(",")
@@ -438,20 +431,13 @@ class HumanPlayer:
 
 class AIPlayer:
 
-    PLAYER_NUM = 1
-
     def __init__(self, brain: TicTacToeBrain, game_token: GameToken):
         # An AI doesn't require a UI, so let's use a DummyUI so that the Game can broadcast messages to players but skip
         #  messaging the AIPlayers
-        self.name = self.generate_name()
+        self.name = "AI_1"
         self.ui = DummyUI()
         self.game_token = game_token
         self.brain = brain
-
-    def generate_name(self) -> str:
-        self_name = f"AI_{AIPlayer.PLAYER_NUM}"
-        AIPlayer.PLAYER_NUM += 1
-        return self_name
 
     def make_move(self, board: TicTacToeBoard) -> dict:
         move = self.brain.calculate_next_move(board, self.game_token)
