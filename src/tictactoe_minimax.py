@@ -116,51 +116,37 @@ class TicTacToeGame:
         self.legal_tokens = None
         self.legal_tokens = TIC_TAC_TOE_TOKENS
 
-    def play(self):  # pragma: no cover
-        try:
-            # Let the concrete game to decide if it needs to initialize resources (like network connections)
-            self.initialize_resources()
+    def play(self):  
 
-            # This will contain the main game loop
-            is_game_over_yet = False
+        # This will contain the main game loop
+        is_game_over_yet = False
 
-            while not is_game_over_yet:
+        while not is_game_over_yet:
 
-                # Ask each of the players for their move
-                for player in self.players:
+            # Ask each of the players for their move
+            for player in self.players:
 
-                    player.ui.output(f"***** {player}'s turn! ******")
-                    player.ui.output(self.board)
+                player.ui.output(f"***** {player}'s turn! ******")
+                player.ui.output(self.board)
+                move = player.make_move(self.board)
+
+                # Check that the move is legal in the context of the board
+                while not self.is_valid_move(move):
+                    player.ui.output(ILLEGAL_MOVE_MSG)
                     move = player.make_move(self.board)
 
-                    # Check that the move is legal in the context of the board
-                    while not self.is_valid_move(move):
-                        player.ui.output(ILLEGAL_MOVE_MSG)
-                        move = player.make_move(self.board)
+                # Apply the player's move to the board since we now know it was legal
+                move_x, move_y = move[MOVE]
+                self.board.current_state[move_x][move_y] = move[GAME_TOKEN]
 
-                    # Apply the player's move to the board since we now know it was legal
-                    move_x, move_y = move[MOVE]
-                    self.board.current_state[move_x][move_y] = move[GAME_TOKEN]
+                is_game_over_yet = self.is_game_over()
 
-                    is_game_over_yet = self.is_game_over()
+                # If the game has ended, break the player loop which in turn will break the game loop
+                if is_game_over_yet:
+                    break
 
-                    # If the game has ended, break the player loop which in turn will break the game loop
-                    if is_game_over_yet:
-                        break
-
-            # Leave every concrete game to decide what it needs to do after a game is completed
-            self.finish_game()
-        finally:
-            self.release_resources()
-
-    def set_up_game(self):
-        pass
-
-    def initialize_resources(self):
-        pass
-
-    def release_resources(self):
-        pass
+        # Leave every concrete game to decide what it needs to do after a game is completed
+        self.finish_game()  
 
     def is_valid_move(self, move: dict) -> bool:
         """
