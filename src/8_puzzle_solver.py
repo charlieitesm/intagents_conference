@@ -390,7 +390,7 @@ def ask_for_a_number(message: str = "Please enter an int number: ") -> int:
             print(f"That's not a valid number, please try again...")
 
 
-def print_solution_info(solution_info: dict, puzzle: str, desired_goal: str):
+def print_solution_info(solution_info: dict, puzzle: str, desired_goal: str, should_print_steps: bool):
 
     print(f"Execution time: {solution_info['finish_time']}")
 
@@ -404,18 +404,19 @@ def print_solution_info(solution_info: dict, puzzle: str, desired_goal: str):
         print(f"Depth level reached: {len(solution_info['steps'])}")
         print(f"Memory used in bytes: {solution_info['memory_used']}")
 
-        for idx, s in enumerate(solution_info["steps"]):
-            print(f"{idx}. Move: {s.action_taken}" if s.action_taken else "")
+        if should_print_steps:
+            for idx, s in enumerate(solution_info["steps"]):
+                print(f"{idx}. Move: {s.action_taken}" if s.action_taken else "")
 
-            # Print a nice formatted board from the matrix representing it
-            print("\n".join(["".join(["{:4}".format(item) for item in row]) for row in s.board]))
+                # Print a nice formatted board from the matrix representing it
+                print("\n".join(["".join(["{:4}".format(item) for item in row]) for row in s.board]))
 
-            if s.heuristic is not None:  # This means that we used A Star
-                # Print the values for H(x), G(x) and F(x) for the node
-                print(f"H(x)={s.heuristic}, G(x)={s.current_depth_in_tree}, F(x)={s.cost_of_solution}")
+                if s.heuristic is not None:  # This means that we used A Star
+                    # Print the values for H(x), G(x) and F(x) for the node
+                    print(f"H(x)={s.heuristic}, G(x)={s.current_depth_in_tree}, F(x)={s.cost_of_solution}")
 
-                # Print how the Heap looked when the node was processed
-                print(f"HEAP>> {s.heap_snapshot}\n")
+                    # Print how the Heap looked when the node was processed
+                    print(f"HEAP>> {s.heap_snapshot}\n")
 
 
 if __name__ == '__main__':
@@ -439,4 +440,4 @@ if __name__ == '__main__':
 
     puzzle_solution = solve_8_puzzle(start_board, selected_algorithm, goal)
 
-    print_solution_info(puzzle_solution, start_board, goal)
+    print_solution_info(puzzle_solution, start_board, goal, should_print_steps=False)
